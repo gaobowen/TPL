@@ -23,6 +23,7 @@ namespace TPL {
         auto enqueue(F&& f, Args&&... args)
             ->std::future<typename std::result_of<F(Args...)>::type>;
         ~TaskPool();
+        size_t threadCount() { return m_threadCount;}
     private:
         // need to keep track of threads so we can join them
         std::vector< std::thread > workers;
@@ -33,11 +34,12 @@ namespace TPL {
         //std::mutex queue_mutex;
         std::condition_variable condition;
         bool stop;
+        size_t m_threadCount;
     };
 
     // the constructor just launches some amount of workers
     inline TaskPool::TaskPool(size_t threads)
-        : stop(false)
+        : stop(false), m_threadCount(threads)
     {
         for (size_t i = 0;i < threads;++i) {
             workers.emplace_back(
