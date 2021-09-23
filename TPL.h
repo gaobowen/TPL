@@ -23,7 +23,7 @@ namespace TPL {
         auto enqueue(F&& f, Args&&... args)
             ->std::future<typename std::result_of<F(Args...)>::type>;
         ~TaskPool();
-        size_t threadCount() { return m_threadCount;}
+        size_t threadCount() { return m_threadCount; }
     private:
         // need to keep track of threads so we can join them
         std::vector< std::thread > workers;
@@ -91,8 +91,14 @@ namespace TPL {
             // don't allow enqueueing after stopping the pool
             if (stop)
                 throw std::runtime_error("enqueue on stopped ThreadPool");
-
-            tasks.enqueue([task]() { (*task)(); });
+            //queue is full.
+            if (tasks.size_approx() / 2 > m_threadCount) {
+                std::thread([task]() { (*task)(); }).detach();
+            }
+            else {
+                tasks.enqueue([task]() { (*task)(); });
+            }
+                
         }
         condition.notify_all();
         return res;
